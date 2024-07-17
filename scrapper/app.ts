@@ -31,6 +31,7 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
         for (let record of records) {
             await extractAndPublishNfeDataUseCase.execute({ url: record.url });
         }
+        return;
     } catch (error: unknown) {
         if (error instanceof ZodError) {
             console.log(error.format());

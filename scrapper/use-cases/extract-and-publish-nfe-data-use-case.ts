@@ -16,6 +16,8 @@ export class ExtractAndPublishNfeUseCase {
     public async execute({ url }: Input): Promise<void> {
         const html = await this.httpGateway.get(url);
         const nfeData = this.nfeParser.getData(html);
+        console.log(nfeData);
+
         await this.messageBroker.publish('arn:aws:sns:us-east-1:381492193067:nfe-data-parsed.fifo', nfeData);
     }
 }
