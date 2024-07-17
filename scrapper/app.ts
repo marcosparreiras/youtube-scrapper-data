@@ -16,7 +16,6 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
         );
 
         for (let record of records) {
-            console.log(record);
             // pegar html da url
             // extrair os dados relevantes deste html
             // publicar esses dados em um topico sns
