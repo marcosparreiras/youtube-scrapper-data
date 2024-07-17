@@ -1,5 +1,12 @@
 import { SQSEvent } from 'aws-lambda';
 import { z, ZodError } from 'zod';
+import { ExtractAndPublishNfeUseCase } from './use-cases/extract-and-publish-nfe-data-use-case';
+import { AxiosHttpGateway } from './adapters/axios-http-gateway';
+import type { HttpGateway } from './bondaries/http-gateway';
+import type { NfeParser } from './bondaries/nfe-parser';
+import { CheerioNfeParser } from './adapters/cheerio-nfe-parser';
+import type { MessageBroker } from './bondaries/message-broker';
+import { SnsMessageBroker } from './adapters/sns-message-broker';
 
 export async function lambdaHandler(event: SQSEvent): Promise<void> {
     const recordSchema = z.array(
@@ -15,10 +22,14 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
             })),
         );
 
+        const httpGateway: HttpGateway = new AxiosHttpGateway();
+        const nfeParser: NfeParser = new CheerioNfeParser();
+        const messageBroker: MessageBroker = new SnsMessageBroker();
+
+        const extractAndPublishNfeDataUseCase = new ExtractAndPublishNfeUseCase(httpGateway, nfeParser, messageBroker);
+
         for (let record of records) {
-            // pegar html da url
-            // extrair os dados relevantes deste html
-            // publicar esses dados em um topico sns
+            await extractAndPublishNfeDataUseCase.execute({ url: record.url });
         }
     } catch (error: unknown) {
         if (error instanceof ZodError) {
