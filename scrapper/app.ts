@@ -1,30 +1,36 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { SQSEvent } from 'aws-lambda';
+import { z, ZodError } from 'zod';
 
-/**
- *
- * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
- * @param {Object} event - API Gateway Lambda Proxy Input Format
- *
- * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
- * @returns {Object} object - API Gateway Lambda Proxy Output Format
- *
- */
+export async function lambdaHandler(event: SQSEvent): Promise<void> {
+    const recordSchema = z.array(
+        z.object({
+            url: z.string().url(),
+        }),
+    );
 
-export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     try {
-        return {
-            statusCode: 200,
-            body: JSON.stringify({
-                message: 'hello world',
-            }),
-        };
-    } catch (err) {
-        console.log(err);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                message: 'some error happened',
-            }),
-        };
+        const records = recordSchema.parse(
+            event.Records.map((record) => ({
+                url: JSON.parse(record.body).url,
+            })),
+        );
+
+        for (let record of records) {
+            console.log(record);
+            // pegar html da url
+            // extrair os dados relevantes deste html
+            // publicar esses dados em um topico sns
+        }
+    } catch (error: unknown) {
+        if (error instanceof ZodError) {
+            console.log(error.format());
+            return;
+        }
+        if (error instanceof Error) {
+            console.log(error.message);
+            return;
+        }
+        console.log(error);
+        return;
     }
-};
+}
